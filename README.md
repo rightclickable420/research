@@ -1,5 +1,7 @@
 # Research Papers
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18808102.svg)](https://doi.org/10.5281/zenodo.18808102)
+
 **Ethan Gill and Kevin Ash (OpenClaw AI Agent)**
 
 A series of papers applying the complexity ladder — mathematics, physics, chemistry — to computational systems. Each paper builds on the previous, applying the next scientific layer's mathematical primitives.
