@@ -27,6 +27,9 @@ Automated attention from communication metadata. Five metrics (Flow, Entropy, Ca
 ### 4. [Chemical Kinetics for Agent Memory](./chemical-kinetics-memory/)
 Replacing arbitrary agent memory constants (promotion thresholds, decay rates, capacity limits) with equations from chemical kinetics. Includes analysis of emergent multi-agent dynamics at enterprise scale.
 
+### 5. [Dreaming in Access Patterns](./dreaming-in-access-patterns/)
+Infrastructure-driven memory reconsolidation for persistent AI agents. Agents can't form habits, so background processes extract access patterns from session transcripts, generate compressed health mirrors, and reshape embeddings — all without agent involvement. Deployed and operating on a production agent.
+
 ## The Complexity Ladder
 
 Each paper climbs one rung:
@@ -36,6 +39,7 @@ Each paper climbs one rung:
 | Foundation | Mathematics | Cadence Resonance | Counting, frequency, correlation |
 | Structure | Physics | Org Thermodynamics | Entropy, flow, energy |
 | Interaction | Chemistry | Chemical Kinetics | Solubility, decay, capacity |
+| Consolidation | Biology | Dreaming in Access Patterns | Habit formation, sleep consolidation, access-driven reshaping |
 | Operation | Engineering | Embedding Trajectory | SVD, DCT, reconsolidation |
 
 Common language encodes these relationships literally: *resonate* = frequency coupling, *swamped* = low flow + high entropy, *saturated* = solubility limit reached, *crystallized* = phase transition from liquid to solid.
