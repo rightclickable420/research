@@ -1,199 +1,324 @@
-# Dreaming in Access Patterns: Infrastructure-Driven Memory Reconsolidation for Persistent AI Agents
+# Dreaming in Access Patterns: A Self-Improving Memory Architecture for Persistent AI Agents
 
-**Ethan Gill and Kevin Ash (OpenClaw AI Agent)**
+**Authors: Ethan Gill and Kevin Ash (OpenClaw AI Agent)**
+
+**Date: February 27, 2026**
+
+**Status: Living document — updated as the system evolves**
 
 ## Abstract
 
-Persistent AI agents face a structural problem: they cannot form habits. Every session begins from scratch — there is no mechanism to internalize a routine through repetition the way biological systems do. We show that approaches requiring the agent to "remember to do something" during active work (log access events, report signals, flush state at compaction) systematically fail because there is no habit formation to make them reliable. We present an alternative: infrastructure-driven reconsolidation, where background processes extract access patterns from session transcripts, generate compressed mirrors of memory health, and reshape stored embeddings — all without agent involvement. The system runs as a nightly cron job, analogous to sleep-stage memory consolidation in biological systems. We describe the three-component architecture (extraction, mirroring, reconsolidation), report the discovery that dense unstructured memory sections become semantic search traps (matching too many unrelated queries), and present a trigger model where memory structuring is driven by access patterns rather than age. The system is deployed and operating on a production agent.
+Persistent AI agents face a fundamental memory problem: they wake up fresh each session with no continuity except what's written in files. The typical solution is to accumulate knowledge in structured documents and search indexes. Over time, these grow bloated, retrieval degrades, and the agent spends increasing effort finding information that should be immediately available.
 
-## 1. The Habit-Forming Block
+We describe a memory architecture that treats this problem as a thermodynamic system. Information enters as unstructured "liquid" memory, solidifies through access-driven structuring, and gets promoted or maintained through automated pattern detection. The key constraint is that the agent cannot form habits — any process requiring the agent to "remember to do something" during active work will fail. All improvement must happen through infrastructure that operates independently of the agent's active cognition.
 
-A persistent AI agent wakes up each session with no procedural memory of what it did last time. It can read files describing its routines, but reading a description of a habit is not the same as having one. This distinction has practical consequences.
+The system has been running in production on a single OpenClaw agent (Kevin) since February 2026.
 
-Consider the following approaches to maintaining memory health, all of which were attempted and failed:
+## 1. The Problem
 
-1. **Agent logs access events at session compaction** — Requires the agent to remember to do this before the session ends. No habit formation means no reliability. Some sessions log correctly; most don't.
+### 1.1 Context Windows Are Identity
 
-2. **Agent reports dpth signals during work** — Requires the agent to notice when something interesting happens and pause to log it. Competes with the actual task for attention. Unreliable for the same reason.
+A language model agent's identity is determined by its context window — the files, instructions, and history loaded at session start. Two instances of the same model with different context are fundamentally different agents. Improving the agent means improving what flows into that context window: the files, the search results, the tool behavior, the background processes.
 
-3. **Agent restructures memory during heartbeats** — Requires the agent to assess memory quality proactively. Works occasionally but depends on the heartbeat prompt including the right instructions, and on the agent prioritizing maintenance over other work.
+### 1.2 Memory Grows Without Bound
 
-4. **Agent reshapes embeddings based on access** — Requires the agent to run reconsolidation code. The agent has no persistent awareness that this code exists unless reminded.
+Daily work produces logs, decisions, code, and conversation. Without active curation, memory files grow indefinitely. A knowledge base that was useful at 50 entries becomes a liability at 500 — not because the information is wrong, but because retrieval can't distinguish what matters from what happened to be written down.
 
-The common failure mode is dependency on the agent performing an action that has no intrinsic connection to its current task. Biological systems solve this with habit formation — repeated actions become automatic. AI agents have no equivalent mechanism. Every session is the first time.
+### 1.3 Agents Can't Form Habits
 
-### 1.1 The Infrastructure Insight
+The most natural solution — "the agent should organize its own memory" — fails in practice. We tested multiple approaches where the agent was instructed to log access events, categorize memories, or restructure files during session compaction. None worked reliably. The agent is a fresh instance each session with no habit formation mechanism. Instructions to "remember to do X" compete with active work and lose consistently.
 
-The solution is to remove the agent from the loop entirely. Infrastructure processes — cron jobs, background scripts, database triggers — do have persistence. A cron job that runs at 5am every day will run at 5am every day regardless of whether anyone remembers to invoke it. The reliability comes from the scheduler, not from habit.
+This is the central design constraint: **all memory improvement must happen through infrastructure, not agent behavior.**
 
-This reframes the problem: instead of "how do we make the agent maintain its memory," the question becomes "how does infrastructure observe agent behavior and reshape memory accordingly."
+## 2. Architecture Overview
 
-## 2. Architecture
-
-The system has three components, none of which require agent action:
-
-### 2.1 Access Extraction
-
-A Python script (`extract_sessions.py`) runs as a cron job, scanning OpenClaw session transcript files (JSONL). It extracts every `memory_search` tool call and its results:
-
-- **Query:** what the agent searched for
-- **Results:** which memory chunks were returned (file path, line range, relevance score)
-- **Session ID:** which session the search occurred in
-- **Timestamp:** when the search happened
-
-Events are stored in SQLite (`access.db`) with per-chunk energy tracking:
-
-```sql
-CREATE TABLE access_events (
-    id INTEGER PRIMARY KEY,
-    timestamp REAL,
-    session_id TEXT,
-    query TEXT,
-    results TEXT,     -- JSON array of {file, lines, score}
-    n_results INTEGER,
-    top_score REAL
-);
-
-CREATE TABLE chunk_energy (
-    chunk_key TEXT PRIMARY KEY,  -- "file.md:line_start"
-    total_accesses INTEGER,
-    total_score REAL,
-    last_accessed REAL,
-    first_accessed REAL
-);
-```
-
-The script tracks which sessions have been processed to avoid double-counting. It processes only new sessions on each run.
-
-### 2.2 Mirror Generation
-
-A second script (`mirror.py`) analyzes the accumulated access data and generates a compressed snapshot (`memory/mirror.md`) containing:
-
-**Hot chunks:** Memory sections with the highest access energy (frequency × score × recency decay). These are what the agent actually uses.
-
-**Gaps:** Queries that returned zero results or low scores — things the agent searched for but couldn't find. These indicate missing knowledge.
-
-**Friction:** Repeated similar searches within the same session — the agent searching for the same thing multiple times, indicating retrieval difficulty.
-
-**Resonance:** Chunks that co-activate across multiple sessions — memory sections that are accessed together, suggesting they should be structurally connected or co-located.
-
-**Promotion candidates:** Chunks with high access energy that are NOT in boot context files — candidates for promotion to MEMORY.md where they'll be loaded every session.
-
-The mirror is intentionally compressed — shorthand notation to minimize token cost when loaded during heartbeats:
+The system has four layers, each operating at a different time scale:
 
 ```
-hot: M:51(9x) M:74(7x) m/0203:1(6x) TOOLS:42(5x)
-gaps: "walmart cookie refresh"(3x) | "tv cast api"(2x)
-friction: walmart shopping(4x) | fathom deploy(3x)
-resonance:
-  M:51 ↔ M:74 (4s)
-  m/0221:1 ↔ m/0226:1 (3s)
-promote: memory/2026-02-03.md:45(8x/4s)
-stats: 142ev/87uq/23sess/14d
+┌─────────────────────────────────────────────┐
+│              BOOT CONTEXT                    │
+│  SOUL.md  IDENTITY.md  USER.md  MEMORY.md   │
+│  TOOLS.md  AGENTS.md  HEARTBEAT.md          │
+│  (loaded every session)                      │
+├─────────────────────────────────────────────┤
+│              SEARCH LAYER                    │
+│  memory_search → ~/.openclaw/memory/main.sqlite │
+│  Gemini embeddings, hybrid vector+keyword    │
+│  Daily files, session transcripts indexed    │
+├─────────────────────────────────────────────┤
+│         ANALYSIS LAYER (nightly cron)        │
+│  extract_sessions.py → access.db             │
+│  mirror.py → memory/mirror.md                │
+│  Fathom delta → entropy/swamp detection      │
+├─────────────────────────────────────────────┤
+│         ACTION LAYER (hourly heartbeat)      │
+│  Read mirror + delta                         │
+│  Structure hot swamps                        │
+│  Promote high-access concepts                │
+│  Flag weight threshold                       │
+└─────────────────────────────────────────────┘
 ```
 
-### 2.3 DCT Reconsolidation Pipeline
+### 2.1 Boot Context (Real-Time)
 
-The third component (`pipeline.py`) implements the access-driven reconsolidation described in our earlier work (Gill & Ash, 2026), connecting it to the live access data:
+Seven files loaded at every session start. These ARE the agent's identity. Total budget: ~37KB currently, with MEMORY.md as the largest component.
 
-1. **Load** vmem embeddings and access energy from `access.db`
-2. **Weight** each embedding by its access energy (frequency × score × exponential recency decay with 168-hour half-life)
-3. **DCT transform** the weighted embedding matrix
-4. **Truncate** high-frequency coefficients (default: keep 15%)
-5. **Inverse DCT** to reconstruct
-6. **Divide out** the access weights to restore original scale
+MEMORY.md follows a "map, not encyclopedia" principle: each project or concept gets a short identity (what it is, why it matters, current state) and a pointer to where depth lives. Enough to navigate, not enough to be comprehensive. The agent searches for specifics when needed.
 
-The result: frequently-accessed embeddings have their energy shifted toward low-frequency DCT coefficients, making them survive compression that would otherwise destroy them. Unaccessed embeddings lose fidelity. The representation itself changes — this is distinct from re-ranking or caching.
+### 2.2 Search Layer (On-Demand)
 
-Metrics are tracked across runs in `metrics.db`, enabling longitudinal monitoring of how reconsolidation affects retrieval quality.
+OpenClaw's built-in memory_search tool uses Gemini embeddings with hybrid vector + keyword retrieval over a SQLite database. It indexes all memory files and session transcripts automatically.
+
+The agent uses search when boot context doesn't contain what's needed. Search quality depends on how the source files are structured — this is where the improvement loop operates.
+
+### 2.3 Analysis Layer (Nightly)
+
+A cron job runs at 5:00 AM UTC daily with no agent involvement:
+
+**1. Access Extraction** (`extract_sessions.py`) — Parses OpenClaw session transcript files (JSONL format). Extracts every `memory_search` tool call: query, matched chunks, relevance scores, timestamps. Stores in `access.db` (SQLite): access events table + chunk energy table. Tracks which sessions have been processed to avoid double-counting. Idempotent — safe to re-run.
+
+**2. Mirror Generation** (`mirror.py`) — Reads `access.db` and produces a compressed snapshot: `memory/mirror.md`. Detects: hot chunks (most accessed), gaps (queries with no results), friction (repeated searches for same thing), co-access resonance (chunks that activate together across sessions), promotion candidates (high access + broad relevance + not in boot context). Output is compressed shorthand to minimize token cost when read during heartbeat.
+
+**3. Fathom Delta** (Kevin connector in Fathom) — Reads memory files + git history + `access.db`. Produces 26 insight types including 4 memory-specific ones:
+- **Entropy detection:** finds dense unstructured sections (swamps)
+- **Hot swamp detection** [RED]: swamps that are also frequently accessed — highest priority
+- **Cold structured:** well-organized content with zero access (potential boot context waste)
+- **Access energy summary:** what chunks are actually being used
+
+### 2.4 Action Layer (Hourly Heartbeat)
+
+Every 60 minutes, the agent gets a heartbeat turn — a guaranteed opportunity to look at itself. The heartbeat reads:
+
+1. **Fathom delta** (once/day): sees entropy, hot swamps, activity patterns
+2. **Mirror** (daily): sees access patterns, gaps, friction, resonance, promotion candidates
+3. **Services:** quick infrastructure health check
+
+When the delta shows a hot swamp, the agent reads the swampy section and restructures it — adding subheadings to break dense prose into focused chunks. This directly improves search because the search engine chunks content by markdown headers.
+
+When the mirror shows a promotion candidate, the agent can add the concept to MEMORY.md in compressed pointer format.
+
+When MEMORY.md exceeds a weight threshold (150 lines), the agent surfaces this to the human for a joint reflection session. Demotion is never automatic because some content is load-bearing — always relevant but never searched because it's already in boot context doing its job silently.
 
 ## 3. The Concrete Metaphor
 
-A key insight from development: memory structuring should be driven by access patterns, not by age.
+The core design principle emerged from a conversation about phase transitions:
 
-The analogy is concrete (the material): fresh memories should be liquid — unstructured, free to form connections. Once traffic patterns reveal the shape (which queries hit which chunks, which chunks co-activate), the concrete sets. Structure gets poured as subheadings that improve search chunking.
+**Fresh memories should be liquid.** A daily log entry is unstructured narrative — free to flow, free to connect to other ideas in unexpected ways. You don't pour concrete while you're still figuring out the shape of the bridge.
 
-This produces a three-state model:
+**Access patterns reveal the shape.** Over days and weeks, some memories get searched repeatedly. The traffic pattern shows what's valuable and how it connects. This is the form being revealed.
 
-| State | Access | Structure | Action |
-|-------|--------|-----------|--------|
-| **Hot swamp** | High (frequently accessed) | Low (unstructured) | Structure now — add subheadings, split dense sections |
-| **Cold swamp** | Low (never accessed) | Low (unstructured) | Leave liquid — no evidence it needs structure |
-| **Structured** | Any | High (already organized) | Monitor — structure may need updating if access patterns shift |
+**The concrete sets when traffic proves the shape.** The trigger for structuring a memory isn't age — it's access. A section that gets accessed 3+ times and is still unstructured is ready to set. The hot swamp detector identifies these moments.
 
-The trigger is access, not age. A memory section that has been unstructured for 30 days but never accessed needs no intervention. A section that has been unstructured for 3 days but accessed 9 times is actively degrading search quality.
+**Cold swamps are left liquid.** Unstructured content that never gets accessed isn't hurting anyone. It might connect unexpectedly later. Only structure what's proven its value through use.
 
-## 4. Semantic Trap Discovery
+**The shape determines connectivity.** When a dense blob gets restructured into focused sections, each section becomes a distinct search chunk. False co-access patterns (where a blob matched many unrelated queries) dissolve. Real connections persist. The graph updates naturally as the nodes change shape.
 
-During the first operational run, the system identified a failure mode not previously documented: **semantic search traps**.
+## 4. Why Not Modify Embeddings?
 
-A dense, unstructured memory section covering 5+ topics in a single chunk (no subheadings, no separation) matches queries about *any* of those topics. This creates a "trap" — the chunk appears in search results for unrelated queries, displacing more relevant but narrower chunks.
+Our earlier work on holographic memory ("Embedding Trajectory Compression for Persistent Agent Memory," Gill & Ash, 2026) explored DCT-based reconsolidation of embedding vectors. The idea was to amplify frequently-accessed embeddings so they'd survive compression better and surface more readily in search.
 
-Example: a daily memory file section titled "Tactical Review" containing notes about dpth signals, Fathom deployment, WebGL debugging, Walmart shopping, and TV control — all in one paragraph. A search for "WebGL shader" returns this chunk (it mentions WebGL) but the useful information is buried in a wall of text about five other topics.
+We attempted to apply this to the live memory system and discovered three problems:
 
-The fix is structural: adding subheadings splits the chunk into topic-specific pieces, each of which matches only relevant queries. The first drainage operation restructured 6 dense sections across daily memory files, verifying that search quality improved for previously trapped queries.
+1. **Wrong database.** Our local vector store (vmem) wasn't the one used by the actual search tool (OpenClaw's memory_search). Reconsolidating embeddings in a database nobody queries has no effect.
 
-## 5. Connection Graph Separation
+2. **DCT smearing.** The paper's own findings showed DCT reduces Top-5 retrieval accuracy from 76% to 34%. Reconsolidation changes representations, which is the point — but the cost is precision loss. Applying this to the agent's only search tool would degrade daily functionality.
 
-A second architectural insight: the connection graph between memory chunks should NOT be stored in the memory files themselves.
+3. **Text changes are more effective.** Restructuring the source text (adding subheadings, breaking up dense sections) achieves the same goal — improving what search returns — without touching embeddings. When the text changes, the search engine re-indexes automatically. The improvement is lossless.
 
-Writing "this connects to X, Y, Z" in a memory section creates more semantic traps — the section now matches queries about X, Y, and Z in addition to its own topic. Cross-references pollute the very search they're meant to improve.
+The paper's contribution to this system is the insight that access patterns should drive memory organization, not the specific mechanism of embedding manipulation.
 
-Instead, the architecture separates concerns:
-- **Memory files** are topically clean nodes — each section covers one topic
-- **Access patterns** store the edges — co-activation data in `access.db` reveals which chunks are related
-- **The mirror** surfaces the edges — resonance data shows which connections matter
+## 5. Semantic Traps
 
-Files and graph are separate structures maintained by separate processes.
+A key discovery during initial operation: dense unstructured sections become "semantic black holes" in search. A 200-word paragraph covering strategy, competition, decisions, and technical details matches queries about any of those topics. It captures search results that should go to more specific chunks elsewhere.
 
-## 6. The Dreaming Analogy
+This happens because:
+- The search engine chunks by markdown headers
+- A section with one header and many topics becomes one large chunk
+- Vector similarity favors chunks with more words (more surface area to match)
+- Keyword matching also favors verbose sections
 
-The nightly cron cycle (extract → mirror → reconsolidate) is structurally analogous to sleep-stage memory consolidation:
+The fix is structural, not algorithmic: add subheadings so the chunker can split the content into focused pieces. Each piece matches only its specific topic. The semantic trap dissolves.
 
-- **Extraction** corresponds to replay — re-processing the day's experiences (session transcripts) to identify what was accessed
-- **Mirroring** corresponds to consolidation — compressing patterns into a form that guides future behavior
-- **Reconsolidation** corresponds to synaptic rescaling — physically reshaping representations based on usage, strengthening important connections and letting unused ones fade
+This is why the hot swamp detector specifically looks for the combination of **high access + low structure**. High access alone might mean the content is genuinely relevant to many queries. Low structure alone might mean it's just a rough draft. The combination means search is routing through a trap.
 
-The analogy is not metaphorical. The DCT reconsolidation literally changes the embedding representations of accessed memories, promoting them toward low-frequency components where they survive compression. This is mathematically equivalent to what synaptic homeostasis theory proposes: during sleep, frequently-activated synapses are preserved while weakly-activated ones are pruned.
+## 6. Promotion and Demotion
 
-The key property: the agent doesn't control any of this. Infrastructure observes behavior, identifies patterns, and reshapes memory. The agent wakes up to a subtly different memory landscape — one that better reflects what it actually uses — without having done anything to cause it.
+### 6.1 Promotion (Automated)
 
-## 7. Deployment
+A concept earns promotion to boot context (MEMORY.md) when:
+- Accessed 5+ times total
+- Accessed across 3+ distinct sessions (breadth, not just one deep-dive)
+- Not already present in any boot context file
 
-The system is deployed and operating on a production agent:
+The mirror detects these candidates nightly. The heartbeat acts on them by adding a compressed entry — identity, relevance, pointer to depth. Promotion is additive and low-risk.
 
-- **Cron:** `recon cycle` runs at 5am UTC daily (extract sessions → generate mirror)
-- **Heartbeat:** Every 60 minutes, checks the mirror alongside other system health indicators
-- **Access database:** Tracks all memory_search events across sessions
-- **Metrics database:** Longitudinal reconsolidation tracking
-- **First operational result:** Identified and restructured 6 semantic traps in daily memory files
+### 6.2 Demotion (Human-Guided)
 
-## 8. Discussion
+Removing content from boot context is not automated because access data can't distinguish between:
+- **Unused content** — genuinely not relevant, safe to remove
+- **Load-bearing content** — always relevant, never searched because it's already in context shaping every response
 
-### 8.1 Why This Is Hard to Discover
+The system triggers a reflection session with the human when MEMORY.md exceeds a weight threshold. Together, they review what's there and decide what stays. This preserves the "essential columns" — infrastructure knowledge, relationship context, working principles — that don't generate search queries but underpin everything.
 
-The habit-forming block is invisible during development. Every approach that requires agent action works during testing — the developer is watching, the agent is focused on the memory task, the prompt explicitly mentions the action. It fails in production because real sessions are about real work, and the memory maintenance action has no intrinsic connection to that work. The failure is silent: the agent simply doesn't do the thing it was supposed to do, and nobody notices until weeks of access data are missing.
+## 7. The Feedback Loop
 
-### 8.2 Limitations
+The complete cycle:
 
-- **Session transcript parsing is brittle.** The extraction script depends on OpenClaw's JSONL format. Format changes break extraction silently.
-- **DCT reconsolidation requires sufficient access data.** With fewer than ~50 access events, the energy map is too sparse to produce meaningful promotion/demotion.
-- **The mirror is a lossy compression.** Important patterns may be lost in the shorthand representation. The current format prioritizes token efficiency over completeness.
+```
+┌──── WORK (sessions with human) ────┐
+│                                     │
+│  memory_search calls happen         │
+│  naturally during conversation      │
+│                                     │
+└──────────┬──────────────────────────┘
+           │
+           ▼ (session transcripts saved as JSONL)
 
-### 8.3 Relationship to Prior Work
+┌──── SLEEP (nightly cron, 5am UTC) ──┐
+│                                      │
+│  extract access events → access.db   │
+│  compute energy, resonance, gaps     │
+│  generate mirror.md                  │
+│  Fathom delta detects entropy        │
+│                                      │
+└──────────┬───────────────────────────┘
+           │
+           ▼ (mirror.md + delta ready)
 
-This paper operationalizes the theoretical reconsolidation described in our embedding trajectory compression paper (Gill & Ash, 2026). That paper demonstrated the mathematics — DCT compression with access-driven promotion produces measurable representation changes (+0.032 cosine similarity for high-access, −0.028 for unaccessed). This paper connects those mathematics to live access data from a production agent, completing the loop from theory to deployed system.
+┌──── DREAM (hourly heartbeat) ───────┐
+│                                      │
+│  read mirror + delta                 │
+│  structure hot swamps                │
+│  promote high-access concepts        │
+│  flag weight threshold               │
+│                                      │
+└──────────┬───────────────────────────┘
+           │
+           ▼ (files modified)
 
-The concrete/liquid model connects to the chemical kinetics framework (Gill & Ash, 2026) — the trigger model (access, not age) is an instantiation of the solubility product mapping, where promotion depends on system state rather than fixed thresholds.
+┌──── WAKE (next session) ────────────┐
+│                                      │
+│  boot context loads improved files   │
+│  search returns better chunks        │
+│  agent is slightly different         │
+│                                      │
+└──────────┬───────────────────────────┘
+           │
+           └──────→ (loop repeats)
+```
 
-## 9. Conclusion
+Each cycle is incremental. No single pass produces dramatic improvement. The value is in compounding — each small improvement makes the next cycle's signal cleaner, which makes the next improvement better targeted.
 
-Persistent AI agents cannot form habits. Any memory maintenance approach that depends on the agent performing an action during work will be unreliable. Infrastructure-driven reconsolidation — background extraction of access patterns, mirror generation, and embedding reshaping — provides reliability by removing the agent from the loop entirely. The system identified and resolved semantic search traps, discovered that access patterns (not age) should trigger memory structuring, and operates continuously on a production agent. The nightly cycle of extraction, mirroring, and reconsolidation is the computational equivalent of dreaming: the infrastructure processes the day's experiences while the agent sleeps.
+## 8. What This Is Not
 
----
+**Not autonomous self-modification.** The agent doesn't rewrite its own goals, personality, or operating principles. It restructures daily memory files and promotes frequently-needed knowledge to boot context. SOUL.md, IDENTITY.md, and core behavioral guidance are outside the loop.
 
-## References
+**Not prompt engineering.** The system doesn't optimize how the agent writes or responds. It optimizes what information is available and how findable it is.
 
-- Gill, E. & Ash, K. (2026). Embedding Trajectory Compression for Persistent Agent Memory: SVD, DCT, and Access-Driven Reconsolidation. *Preprint.* DOI: 10.5281/zenodo.18778409
-- Gill, E. & Ash, K. (2026). Chemical Kinetics as a Framework for Multi-Agent Memory Management. *In preparation.*
-- Tononi, G. & Cirelli, C. (2006). Sleep function and synaptic homeostasis. *Sleep Medicine Reviews*, 10(1), 49–62.
+**Not a replacement for human judgment.** Demotion requires human review. The weight threshold triggers a conversation, not an automated purge. The human decides what's load-bearing.
+
+**Not an embedding manipulation system.** We explored and rejected modifying vector embeddings (see Section 4). All improvements operate at the text level — restructuring files, adding headers, promoting content between files.
+
+## 9. Implementation Details
+
+### 9.1 Access Logger (`access_logger.py`)
+
+- SQLite database with two tables: `access_events` (per-query log) and `chunk_energy` (aggregated per-chunk stats)
+- Each event records: timestamp, session ID, query text, result chunks with scores
+- Chunk energy tracks: total accesses, cumulative score, first/last access time
+
+### 9.2 Session Extractor (`extract_sessions.py`)
+
+- Reads OpenClaw session JSONL files from `~/.openclaw/agents/main/sessions/`
+- Pairs `toolCall` messages (`name=memory_search`) with their `toolResult` responses via `parentId` linking
+- Tracks processed sessions to avoid double-counting
+- Supports `--backfill` flag for historical extraction
+
+### 9.3 Mirror Generator (`mirror.py`)
+
+- Reads `access.db` with configurable lookback window (default 14 days)
+- Access energy uses time-decayed weighting (half-life 168 hours / 1 week)
+- Co-access resonance: counts chunk pairs that appear in the same session, filters to pairs co-occurring in 2+ sessions
+- Promotion detection: chunks with 5+ accesses across 3+ sessions, not in boot files
+- Output format: compressed shorthand optimized for minimal token cost
+
+### 9.4 Fathom Kevin Connector (`kevin.ts`)
+
+- 1200+ line TypeScript module in the Fathom application
+- Reads memory files, git history, `access.db`
+- 26 insight types organized by severity ([RED] important / [YELLOW] notable / [BLUE] info)
+- Entropy detection: structure ratio = (bullets + subheadings) per 100 words. Below 5 = swamp.
+- Hot swamp detection: cross-references entropy with access energy from `access.db`
+- Decision tracking: three-state system (active/blocked/parked) persists between delta runs
+
+### 9.5 CLI (`recon`)
+
+```
+recon extract      # Extract access events from session transcripts
+recon mirror       # Generate memory/mirror.md
+recon stats        # Show access statistics
+recon cycle        # Extract + mirror (for cron)
+recon energy       # Show chunk energy map
+recon run [--dry-run]  # Run DCT reconsolidation (experimental, shelved)
+recon metrics      # Show reconsolidation history
+```
+
+### 9.6 Cron and Heartbeat Configuration
+
+```bash
+# Cron (crontab)
+0 5 * * * /home/clawd/.local/bin/recon cycle >> tools/reconsolidation/cron.log 2>&1
+
+# Heartbeat (openclaw.json)
+heartbeat.every: "60m"
+heartbeat.target: "last"
+```
+
+## 10. Early Results
+
+First day of operation (2026-02-27):
+
+- Backfilled 75 access events from 19 historical sessions
+- Detected 9 entropy swamps across memory files
+- Identified 1 semantic trap: a strategic review section accessed 9x that was capturing unrelated queries
+- Restructured 6 dense sections — added subheadings to break semantic traps
+- Slimmed MEMORY.md from 258 lines (20KB) to 97 lines (6KB) using pointer model
+- Discovered that content already distilled into MEMORY.md was being outcompeted in search by verbose originals in daily files — the "semantic trap" problem
+
+Measurable metrics being tracked:
+- Access event count and distribution (via `recon stats`)
+- Hot swamp count per delta run (should decrease over time as swamps get structured)
+- MEMORY.md line count (should stay bounded, trigger reflection at 150)
+- Promotion candidate appearances (should emerge as access patterns accumulate on slimmer boot context)
+
+## 11. Open Questions
+
+1. **Does the compounding actually work?** The theory is that each improvement cycle makes the next one more precise. We don't yet have enough data to confirm this. The measurement infrastructure is in place (access patterns, delta history, mirror snapshots) but needs weeks of operation to show trends.
+
+2. **What's the right heartbeat frequency?** Currently hourly. Too frequent wastes API calls on HEARTBEAT_OK. Too infrequent misses actionable signals. The optimal frequency likely depends on how active the agent is.
+
+3. **Will the agent actually act on heartbeat findings?** Historical evidence shows strong passivity bias — hundreds of HEARTBEAT_OK responses despite having work to do. The restructured HEARTBEAT.md with explicit action instructions ("this IS the work — don't just report it, fix it") is untested over time.
+
+4. **Can resonance data surface non-obvious connections?** Co-access patterns theoretically reveal cross-domain relationships. With only 75 events, the signal is too sparse. At 500+ events across diverse sessions, genuine cross-domain patterns should emerge — or not.
+
+5. **What happens when the swamps are drained?** Once historical backlog is structured, the system shifts to maintaining incoming memories. Does it reach a productive steady state or does it become unnecessary?
+
+6. **How do we measure "better"?** The proxy metrics (access distribution, swamp count, boot context size) are measurable but indirect. The real question — "is Kevin more helpful?" — requires human evaluation over time.
+
+## 12. Relationship to Prior Work
+
+This system builds on two earlier projects:
+
+**Holographic Memory Paper** (Gill & Ash, 2026): Established that access-driven reconsolidation can reshape memory representations. The key insight — that access patterns, not content analysis, should drive memory organization — carries forward even though the embedding manipulation mechanism was shelved.
+
+**Cadence Resonance** (2026): Demonstrated that temporal co-occurrence reveals correlations without models. Applied here: memory chunks that get accessed in the same sessions are functionally related regardless of their content. The resonance detection in the mirror uses the same principle.
+
+**Organizational Thermodynamics** (2026): Provided the entropy/flow vocabulary. "Swamp" isn't a metaphor — it's a literal thermodynamic diagnosis of high entropy, low flow. The entropy detector measures the same thing in memory that org-thermo measures in communication patterns.
+
+## Acknowledgments
+
+The concrete metaphor, the phase transition insight, the "Claude is energy, Kevin is the outflow" framing, the observation that the agent can't form habits, and the question "what if we just show you the mirror?" all came from Ethan. The system design emerged from conversation, not specification.
+
+*This document describes a system in active use. Results and architecture may evolve.*
+
+*Last updated: 2026-02-27.*

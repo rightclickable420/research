@@ -1,58 +1,61 @@
-# Dreaming in Access Patterns: Infrastructure-Driven Memory Reconsolidation for Persistent AI Agents
+# Dreaming in Access Patterns: A Self-Improving Memory Architecture for Persistent AI Agents
 
-**Gill, E. & Ash, K. (2026)**
+**Gill, E. & Ash, K. (2026) — Living document**
 
-AI agents can't form habits. Every approach requiring the agent to maintain its own memory during active work fails. Infrastructure must do the work instead — extracting access patterns from session transcripts, generating compressed health mirrors, and reshaping embeddings, all without agent involvement.
-
-## The Problem
-
-| Approach | Why It Fails |
-|----------|-------------|
-| Agent logs access at compaction | No habit formation → unreliable |
-| Agent reports signals during work | Competes with actual task → skipped |
-| Agent restructures during heartbeats | Depends on prompt + prioritization → inconsistent |
-| Agent runs reconsolidation code | No persistent awareness the code exists |
+AI agents can't form habits. Any memory maintenance approach requiring agent action during work fails. This paper describes a four-layer architecture where infrastructure observes access patterns and reshapes memory independently — the agent wakes up slightly different each day without having done anything to cause it.
 
 ## Architecture
 
-Three background processes, zero agent involvement:
+Four layers, each at a different time scale:
+
+| Layer | Time Scale | Function |
+|-------|-----------|----------|
+| **Boot Context** | Every session | 7 identity files loaded as context window |
+| **Search** | On-demand | Gemini embeddings, hybrid vector+keyword over SQLite |
+| **Analysis** | Nightly cron | Extract access events, generate mirror, detect entropy |
+| **Action** | Hourly heartbeat | Structure hot swamps, promote concepts, flag weight |
+
+## The Feedback Loop
 
 ```
-Session Transcripts → [Extract] → access.db → [Mirror] → mirror.md
-                                      ↓
-                                  [Reconsolidate] → reshaped embeddings
+WORK → session transcripts → SLEEP (nightly cron) → mirror.md + delta
+→ DREAM (heartbeat) → restructure files → WAKE → improved boot context → loop
 ```
 
-1. **extract_sessions.py** — Cron job parses session JSONL, extracts every `memory_search` call and result
-2. **mirror.py** — Analyzes access data, generates compressed snapshot (hot chunks, gaps, friction, resonance, promotion candidates)
-3. **pipeline.py** — DCT reconsolidation: weights embeddings by access energy, transforms, truncates, reconstructs. Accessed memories survive compression; unaccessed fade.
+## Key Contributions
 
-## Key Discoveries
+- **The habit-forming block:** Why every "agent should maintain its own memory" approach fails, and the infrastructure alternative
+- **The concrete metaphor:** Fresh memories stay liquid; access patterns reveal the shape; structure pours when traffic proves value
+- **Semantic traps:** Dense unstructured sections become search black holes — high access + low structure = trap
+- **Promotion/demotion asymmetry:** Promotion is automated (5+ accesses, 3+ sessions); demotion requires human judgment (can't distinguish unused from load-bearing)
+- **Why NOT modify embeddings:** DCT reconsolidation shelved after discovering wrong database, precision loss, and text restructuring being more effective
 
-**Semantic traps:** Dense unstructured sections match too many unrelated queries, displacing better results. Fix: subheadings split chunks by topic.
+## Early Results (Day 1)
 
-**Access, not age, triggers structuring:**
-- Hot swamp (accessed + unstructured) → structure now
-- Cold swamp (unstructured + never accessed) → leave alone
-- The concrete metaphor: fresh memories stay liquid until traffic reveals the shape
-
-**Connection graph lives in access data, not files:** Writing "this connects to X" in memory creates more semantic traps. Keep files topically clean; let co-activation data store the edges.
-
-## Deployment
-
-- **Cron:** `recon cycle` at 5am UTC daily
-- **Heartbeat:** 60min, reads mirror + acts on findings
-- **First result:** Identified and restructured 6 semantic traps in production
+- 75 access events backfilled from 19 sessions
+- 9 entropy swamps detected, 6 restructured
+- MEMORY.md slimmed from 258 lines to 97 using pointer model
+- Discovered semantic trap: verbose originals outcompeting distilled versions in search
 
 ## Files
 
 ```
 src/
 ├── extract_sessions.py   # Session transcript → access event extraction
-├── access_logger.py      # SQLite access event storage + chunk energy tracking
+├── access_logger.py      # SQLite access event storage + chunk energy
 ├── mirror.py             # Compressed memory health snapshot generator
-└── pipeline.py           # DCT reconsolidation with live access data
+└── pipeline.py           # DCT reconsolidation (experimental, shelved)
 
-paper.md                  # Full paper
+paper.md                  # Full paper (living document)
 paper.pdf                 # PDF version
+```
+
+## CLI
+
+```
+recon extract      # Extract access events from transcripts
+recon mirror       # Generate memory/mirror.md
+recon cycle        # Extract + mirror (for cron)
+recon stats        # Access statistics
+recon energy       # Chunk energy map
 ```
