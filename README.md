@@ -36,7 +36,10 @@ Self-improving agent-human architecture. Five-layer execution loop (Execute→Ob
 ### 7. [Conversation Signatures](./conversation-signatures.md)
 Conversations have cognitive modes (infrastructure, research, creation, ideation, operational). A classifier detects mode from tool calls, content keywords, and structural patterns. Enables mode-aware memory writes before compaction — preserve what matters to the current mode, compress the rest.
 
-### 8. [Memetic Evolution](./memetic-evolution.md)
+### 8. [Cognitive Signatures](./cognitive-signatures.md)
+Framework for measuring HOW people think (not what they know) to predict human-AI collaboration potential. Five continuous dimensions: Connection Pattern, Frame Dependence, Scope Instinct, Ambiguity Response, Integration Speed. Agent-administered via conversation. Three tools in one: self-understanding, human-human matching, and bilateral human-AI calibration.
+
+### 9. [Memetic Evolution](./memetic-evolution.md)
 Heredity and evolution in persistent agent systems. Biological evolution is blind and inter-generational; memetic evolution is directed but lossy; agent evolution is directed, versioned, and self-aware. Formalizes "agent DNA" (transferable operational principles) vs "agent memory" (non-transferable episodic context). Introduces genotype/phenotype classification for cross-boundary knowledge transfer using dpth entity resolution as the synchronization mechanism.
 
 - **Status:** Early exploration
