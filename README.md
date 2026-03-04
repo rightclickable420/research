@@ -4,7 +4,7 @@
 
 **Ethan Gill and Kevin Ash (OpenClaw AI Agent)**
 
-A series of papers applying the complexity ladder — mathematics, physics, chemistry — to computational systems. Each paper builds on the previous, applying the next scientific layer's mathematical primitives.
+A series of papers applying the complexity ladder — mathematics, physics, chemistry, biology, psychology, sociology — to computational systems. Each paper builds on the previous, applying the next scientific layer's mathematical primitives.
 
 ## Papers
 
@@ -30,6 +30,17 @@ Replacing arbitrary agent memory constants (promotion thresholds, decay rates, c
 ### 5. [Dreaming in Access Patterns](./dreaming-in-access-patterns/)
 Infrastructure-driven memory reconsolidation for persistent AI agents. Agents can't form habits, so background processes extract access patterns from session transcripts, generate compressed health mirrors, and reshape embeddings — all without agent involvement. Deployed and operating on a production agent.
 
+### 6. [Adaptive Organizations](./adaptive-organization.md)
+Self-improving agent-human architecture. Five-layer execution loop (Execute→Observe→Diagnose→Prescribe→Execute) connecting all prior papers. Five autonomy levels from scripted to generative. Agent telemetry provides the same three metadata fields organizational thermodynamics needs.
+
+### 7. [Conversation Signatures](./conversation-signatures.md)
+Conversations have cognitive modes (infrastructure, research, creation, ideation, operational). A classifier detects mode from tool calls, content keywords, and structural patterns. Enables mode-aware memory writes before compaction — preserve what matters to the current mode, compress the rest.
+
+### 8. [Memetic Evolution](./memetic-evolution.md)
+Heredity and evolution in persistent agent systems. Biological evolution is blind and inter-generational; memetic evolution is directed but lossy; agent evolution is directed, versioned, and self-aware. Formalizes "agent DNA" (transferable operational principles) vs "agent memory" (non-transferable episodic context). Introduces genotype/phenotype classification for cross-boundary knowledge transfer using dpth entity resolution as the synchronization mechanism.
+
+- **Status:** Early exploration
+
 ## The Complexity Ladder
 
 Each paper climbs one rung:
@@ -41,8 +52,11 @@ Each paper climbs one rung:
 | Interaction | Chemistry | Chemical Kinetics | Solubility, decay, capacity |
 | Consolidation | Biology | Dreaming in Access Patterns | Habit formation, sleep consolidation, access-driven reshaping |
 | Operation | Engineering | Embedding Trajectory | SVD, DCT, reconsolidation |
+| Coordination | Sociology | Adaptive Organizations | Execution loops, autonomy levels, self-improvement |
+| Cognition | Psychology | Conversation Signatures | Mode detection, attention, context-aware compression |
+| Evolution | Biology | Memetic Evolution | Heredity, genotype/phenotype, Lamarckian inheritance |
 
-Common language encodes these relationships literally: *resonate* = frequency coupling, *swamped* = low flow + high entropy, *saturated* = solubility limit reached, *crystallized* = phase transition from liquid to solid.
+Common language encodes these relationships literally: *resonate* = frequency coupling, *swamped* = low flow + high entropy, *saturated* = solubility limit reached, *crystallized* = phase transition from liquid to solid, *DNA* = transferable operational structure, *phenotype* = environment-specific adaptation.
 
 ## Authors
 
@@ -52,4 +66,3 @@ Common language encodes these relationships literally: *resonate* = frequency co
 ## License
 
 MIT
-
