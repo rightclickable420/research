@@ -312,7 +312,74 @@ The parallel to **childhood amnesia** is particularly striking: young children f
 
 **Expert intuition** maps to dense domain-specific memory regions where Hopfield basins are deep and well-differentiated. An expert's pattern completion is fast and accurate because their relevant memory density is high, even if their total memory count is modest.
 
-## 8. Limitations and Open Questions
+## 8. Implications for Transformer Training
+
+### 8.1 Attention IS Anchored Hopfield Retrieval
+
+Ramsauer et al. [2021] proved that transformer attention is mathematically equivalent to continuous Hopfield retrieval. Our anchored Hopfield architecture maps directly onto transformer components:
+
+| Anchored Hopfield | Transformer |
+|-------------------|-------------|
+| Degraded cue ẽ | Query Q |
+| Memory bank M | Keys K / Values V |
+| Inverse temperature β | 1/√d (scaling factor) |
+| Hopfield output | Attention(Q,K,V) = softmax(QK^T/√d)·V |
+| **Anchor weight α** | **No direct equivalent** |
+
+The anchor parameter α has no standard transformer analog. Residual connections (`out = x + Attention(x)`) perform a related function — preserving the input around attention — but operate *after* the retrieval, not *within* it. Our anchoring operates within the iterative retrieval dynamics, constraining each step to the original signal.
+
+### 8.2 Anchored Attention: A Hallucination-Resistant Variant
+
+We propose **anchored attention** as a modification to the standard mechanism:
+
+```
+AnchoredAttention(Q, K, V) = α · Q + (1 - α) · softmax(QK^T/√d) · V
+```
+
+where α ∈ [0, 1] is a learned parameter (per-head or per-layer).
+
+- At α = 0: Standard attention (maximum expressivity, hallucination risk)
+- At α = 1: Identity (no attention, pure input preservation)
+- At learned α: The model discovers the optimal similarity-accuracy tradeoff per layer
+
+**Why this should reduce hallucination:** Our experiments show that pure Hopfield retrieval (= standard attention) converges to semantically plausible but incorrect basins. Anchoring constrains retrieval to the input's direction. In transformer terms: the model stays closer to what the input actually says rather than drifting to what it *could* say based on associative patterns in the weights.
+
+This is distinct from existing approaches:
+- **Residual connections** add input *after* attention: `x + Attention(x)`. The attention step itself is unconstrained.
+- **Gated attention** [2025] adds learned gates for sparsity, not for input preservation.
+- **Post-hoc interventions** (ICLR/CVPR 2025) diagnose hallucination through attention analysis but don't modify the mechanism.
+
+Anchored attention constrains the retrieval *during* computation, not before or after.
+
+### 8.3 Density-Dependent Scaling Laws
+
+Our core finding — reconstruction quality scales with corpus density — provides a Hopfield-theoretic explanation for empirical scaling laws:
+
+1. **More parameters** = denser Hopfield energy landscape (more basins, sharper gradients)
+2. **Denser landscape** = better reconstruction from partial cues (each query finds richer associative context)
+3. **Better reconstruction** = less training data needed per concept (the model's own structure fills gaps)
+
+This is the scaling law: larger models learn more from less data. Our framework explains *why* — it's not just curve fitting, it's a property of associative memory density.
+
+**Prediction:** If this analysis is correct, then:
+- Scaling law exponents should correlate with the Hopfield capacity of the architecture (exponential in modern continuous Hopfield networks)
+- There exists an optimal model size for any given dataset density, beyond which additional parameters provide diminishing returns (the landscape is already dense enough)
+- DCT-compressed training data should be viable — the model's attention mechanism (= Hopfield retrieval) can reconstruct the missing high-frequency detail from the corpus's associative structure
+
+### 8.4 Training on Compressed Embeddings
+
+The most speculative but potentially highest-impact implication:
+
+If Hopfield reconstruction can recover 0.94 similarity from 5% of DCT coefficients (Phase 1), then training data could be stored and processed in compressed form. The model's own attention layers would reconstruct full representations during forward passes.
+
+This would mean:
+- **20× reduction in training data storage**
+- **Faster data loading** (smaller representations move through memory faster)
+- **The model learns to reconstruct** — training on compressed data forces the attention mechanism to develop stronger associative retrieval, potentially improving generalization
+
+This requires experimental validation but follows directly from our demonstrated results.
+
+## 9. Limitations and Open Questions
 
 ### 8.1 Confabulation as Feature and Risk
 
@@ -338,7 +405,7 @@ Both β (inverse temperature) and α (anchor weight) should be functions of corp
 
 Our most important open question: does anchored Hopfield accuracy scale with density? If NN@1 accuracy at α=0.7 improves from 28% (N=5000) toward 50%+ at N=100K, the architecture becomes viable for precise retrieval at organizational scale. If accuracy plateaus, the system is limited to gist-level reconstruction. This determines whether the architecture supports institutional knowledge or only institutional intuition.
 
-## 9. Conclusion
+## 10. Conclusion
 
 We have demonstrated three results:
 
