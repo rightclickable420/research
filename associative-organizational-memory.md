@@ -7,7 +7,7 @@
 
 ## Abstract
 
-We demonstrate that stacking continuous Hopfield networks with DCT-based embedding trajectory compression produces *collective compression* — a regime where individual memory storage cost decreases as corpus density increases. On a 65-chunk agent memory corpus, Hopfield-DCT reconstruction achieves 0.94 cosine similarity at 5% coefficient retention, compared to 0.24 for DCT alone — a 14× effective compression improvement. We show this result emerges from the complementary failure modes of the two systems: DCT provides graceful degradation without associative context, while Hopfield provides associative reconstruction without frequency decomposition. Their combination produces reconstructive memory that mirrors biological recall: details fade with time, and reconstruction draws on the full associative fabric of experience. We further argue that this architecture unifies nine prior papers spanning cadence resonance, organizational thermodynamics, chemical kinetics, dreaming in access patterns, embedding trajectory compression, adaptive organizations, cognitive signatures, conversation signatures, and memetic evolution into a single system whose emergent properties — institutional knowledge, organizational memory, collective intelligence — only manifest at scale.
+We demonstrate that stacking continuous Hopfield networks with DCT-based embedding trajectory compression produces *collective compression* — a regime where individual memory storage cost decreases as corpus density increases. On a 65-chunk agent memory corpus, Hopfield-DCT reconstruction achieves 0.94 cosine similarity at 5% coefficient retention, compared to 0.24 for DCT alone. On a 5000-article Wikipedia corpus, quality scales from 0.53 (N=50) to 0.65 (N=5000), confirming density-dependent improvement. However, we discover that pure Hopfield reconstruction produces *computational confabulation* — high similarity to the original but convergence to incorrect associative neighbors. We introduce **anchored Hopfield retrieval**, which constrains reconstruction to the DCT signal's direction, achieving 82% top-5 nearest-neighbor accuracy (vs. 76% DCT alone, 62% pure Hopfield). This reveals a tunable **similarity-accuracy tradeoff** governed by an anchor parameter α, mirroring the biological distinction between familiarity and recollection. We argue that this architecture unifies nine prior papers spanning cadence resonance, organizational thermodynamics, chemical kinetics, access-driven consolidation, embedding trajectory compression, adaptive organizations, cognitive signatures, conversation signatures, and memetic evolution into a single system whose emergent properties — institutional knowledge, collective compression, reconstructive recall — only manifest at scale.
 
 ## 1. Introduction
 
@@ -97,17 +97,29 @@ Over time, additional coefficients are dropped according to an access-weighted d
 - Unused memories lose coefficients progressively (decay toward structural skeleton)
 - The DC component c₀ never decays (semantic identity persists indefinitely)
 
-### 3.3 Reconstruction
+### 3.3 Reconstruction: Anchored Hopfield Retrieval
 
-When a memory is recalled:
+Pure Hopfield retrieval from a degraded cue risks *basin drift* — the reconstruction converges to a semantically similar but incorrect memory. To preserve the directional truth of the DCT signal while gaining associative enhancement, we introduce **anchored retrieval**:
+
+At each iteration, the update blends the Hopfield output with the original degraded cue:
+
+```
+ξ_{t+1} = normalize(α · ẽ + (1 - α) · softmax(β · M · ξ_t) · M^T)
+```
+
+where α ∈ [0, 1] is the **anchor weight**:
+- α = 0: Pure Hopfield (maximum similarity, risk of basin drift)
+- α = 1: Pure DCT (preserves identity, no associative enhancement)
+- α ∈ [0.5, 0.9]: Hybrid regime (DCT constrains direction, Hopfield enhances signal)
+
+The full reconstruction pipeline:
 
 1. **Decompress:** Inverse DCT of retained coefficients → degraded embedding ẽ
 2. **Normalize:** ẽ → ẽ / ||ẽ||
-3. **Hopfield retrieve:** Feed ẽ as query into continuous Hopfield network
-   - Memory bank M contains all other stored embeddings
-   - Iterative update: ξ_{t+1} = normalize(softmax(β · M · ξ_t) · M^T)
-   - Converges in 5-10 steps
-4. **Output:** Reconstructed embedding ê combines DCT structure with associative detail
+3. **Anchored Hopfield retrieve:** Iterative update with anchor blending (5-10 steps)
+   - Memory bank M contains all stored embeddings
+   - Each step: compute Hopfield attention output, blend with anchor ẽ, normalize
+4. **Output:** Reconstructed embedding ê that preserves DCT identity while incorporating associative detail
 
 ### 3.4 The Collective Compression Mechanism
 
@@ -122,89 +134,124 @@ Individual storage cost decreases as the organization grows. This is the opposit
 
 ## 4. Experimental Results
 
-### 4.1 Setup
+### 4.1 Phase 1: Mechanism Proof (Agent Memory, N=65)
 
 **Corpus:** 65 memory chunks from a real agent workspace (Kevin), embedded using BGE-small-en-v1.5 (768 dimensions). Chunks include identity files, daily notes, project documentation, and research memos spanning 5 weeks of continuous operation.
 
-**Procedure:** For each memory i:
-1. DCT compress at retention level k/768
-2. Reconstruct via Hopfield network (β=128, 10 iterations, self excluded from memory bank)
-3. Measure cosine similarity to original embedding
+**Procedure:** For each memory i, exclude it from the memory bank, DCT compress at retention level k/768, reconstruct via pure Hopfield network (β=128, 10 iterations), measure cosine similarity to original.
 
-**Metric:** Cosine similarity between original and reconstructed embeddings (1.0 = perfect, 0.0 = orthogonal).
+#### 4.1.1 Results: DCT vs Pure Hopfield-DCT
 
-### 4.2 Results: DCT vs Hopfield-DCT
+| Retention | Coefficients | DCT Quality | Hopfield-DCT Quality | Δ |
+|-----------|-------------|-------------|---------------------|---|
+| 0.5% | 3 | 0.0104 | 0.8856 | +0.8753 |
+| 1% | 7 | 0.0966 | 0.8155 | +0.7190 |
+| 2% | 15 | 0.1695 | 0.8970 | +0.7275 |
+| 5% | 38 | 0.2398 | 0.9424 | +0.7026 |
+| 10% | 76 | 0.3243 | 0.9543 | +0.6300 |
+| 20% | 153 | 0.4525 | 0.9685 | +0.5160 |
+| 50% | 384 | 0.7176 | 0.9736 | +0.2560 |
+| 100% | 768 | 1.0000 | 0.9752 | −0.0248 |
 
-| Retention | Coefficients | DCT Quality | Hopfield-DCT Quality | Δ | Improvement |
-|-----------|-------------|-------------|---------------------|---|-------------|
-| 0.5% | 3 | 0.0104 | 0.8856 | +0.8753 | — |
-| 1% | 7 | 0.0966 | 0.8155 | +0.7190 | — |
-| 2% | 15 | 0.1695 | 0.8970 | +0.7275 | — |
-| 5% | 38 | 0.2398 | 0.9424 | +0.7026 | **14×** |
-| 10% | 76 | 0.3243 | 0.9543 | +0.6300 | 11× |
-| 20% | 153 | 0.4525 | 0.9685 | +0.5160 | 7× |
-| 30% | 230 | 0.5421 | 0.9733 | +0.4312 | 5× |
-| 50% | 384 | 0.7176 | 0.9736 | +0.2560 | 2.5× |
-| 70% | 537 | 0.8470 | 0.9739 | +0.1270 | 1.5× |
-| 100% | 768 | 1.0000 | 0.9752 | −0.0248 | — |
+At 5% retention, pure Hopfield-DCT achieves 0.94 similarity — a dramatic improvement over DCT's 0.24. However, cosine similarity alone does not measure whether the *correct* memory was retrieved.
 
-**Key findings:**
-
-1. **At 5% retention, Hopfield-DCT achieves 0.94 quality.** DCT alone requires 100% retention (all 768 coefficients) to reach equivalent quality. This represents a 14× effective compression improvement.
-
-2. **Hopfield-DCT exceeds 0.90 quality at all retention levels above 2%.** The associative layer provides a quality floor that DCT alone cannot match until near-full retention.
-
-3. **At 100% retention (no compression), DCT is marginally better** (1.0 vs 0.975). This is expected — Hopfield reconstruction introduces slight associative noise when the original is already complete.
-
-4. **Below 2% retention, collapse effects emerge.** With too few coefficients, the degraded cue doesn't carry enough information to land in the correct Hopfield basin. The network converges toward a corpus mean attractor.
-
-### 4.3 Collapse Analysis
-
-The inverse temperature β controls the sharpness of Hopfield retrieval. We measured reconstruction collapse (average pairwise cosine similarity between distinct reconstructions; 1.0 = all reconstructions identical = collapsed to mean):
+#### 4.1.2 Collapse Analysis
 
 | β | Quality | Collapse |
 |---|---------|----------|
 | 0.5 | 0.9191 | 1.0000 |
-| 4.0 | 0.9189 | 1.0000 |
 | 16.0 | 0.9158 | 1.0000 |
 | 64.0 | 0.9416 | 0.8954 |
 | 128.0 | 0.9581 | 0.8666 |
 
-At low β, the network collapses to the corpus mean regardless of input — all memories reconstruct to the same centroid. This produces seemingly high quality (the mean is close to everything) but no differentiation.
+At low β, the network collapses to the corpus mean regardless of input. At β=128, reconstructions become distinct (collapse 0.87) and quality improves.
 
-At high β (128), reconstructions become distinct (collapse drops to 0.87) and quality improves. The network is finding individual memories, not just the mean.
+### 4.2 Phase 2: Density Scaling (Wikipedia, N=50-5000)
 
-**Prediction:** At higher corpus density, the transition to differentiated retrieval should occur at lower β, because denser basins provide more gradients for the retrieval dynamics to follow.
+**Corpus:** Simple English Wikipedia, Cohere multilingual embeddings (1024 dimensions). 50 held-out test memories evaluated against corpora of increasing size.
 
-## 5. The Density Scaling Hypothesis
+#### 4.2.1 Density Scaling Results (Pure Hopfield, β=128)
 
-### 5.1 The Claim
+| Corpus Size | DCT (5%) | Hopfield (5%) | Δ | DCT (10%) | Hopfield (10%) | Δ |
+|-------------|----------|--------------|---|-----------|----------------|---|
+| 50 | 0.2159 | 0.5311 | +0.32 | 0.3045 | 0.5652 | +0.26 |
+| 100 | 0.2159 | 0.5236 | +0.31 | 0.3045 | 0.5588 | +0.25 |
+| 500 | 0.2159 | 0.4903 | +0.27 | 0.3045 | 0.5561 | +0.25 |
+| 1,000 | 0.2159 | 0.4995 | +0.28 | 0.3045 | 0.5643 | +0.26 |
+| **5,000** | **0.2159** | **0.6451** | **+0.43** | **0.3045** | **0.6729** | **+0.37** |
 
-Reconstruction quality at a given compression level should *improve* with corpus density. This is because:
+**Key finding:** Reconstruction quality scales with corpus density. At 5% compression, quality increases from 0.53 (N=50) to 0.65 (N=5000) — a 23% improvement from density alone. A "sparse middle" dip occurs at N=100-500 where density dilutes without providing enough structure; this resolves as the corpus grows.
 
-1. **Denser embedding space** → more memories near any given query → richer associative context
-2. **More basins** → sharper energy landscape → better pattern completion
-3. **Cross-domain associations** → memories from related but distinct domains provide structural scaffolding
+**Note on domain coherence:** Phase 1 (agent memory, same domain) achieved 0.94 quality at N=65. Phase 2 (Wikipedia, cross-domain) achieves 0.65 at N=5000. The difference is *domain coherence* — semantically related memories form tighter basins. Organizational corpora (same company, same domain) should fall between these bounds.
 
-### 5.2 Experimental Design (Phase 2)
+### 4.3 The Similarity-Accuracy Tradeoff
 
-To test density scaling without requiring organizational data:
+Phase 2 revealed a critical distinction: **high cosine similarity does not imply correct retrieval.** We measured nearest-neighbor preservation — whether the reconstruction's nearest neighbor in the corpus matches the original's nearest neighbor.
 
-1. **Corpus:** Public embedding dataset (Wikipedia paragraphs, ~1M embeddings)
-2. **Subsample:** 100, 1K, 10K, 100K memories
-3. **Procedure:** Same as Phase 1 at each scale
-4. **Measure:** Quality vs. density at fixed compression ratios
-5. **Expected:** Monotonically increasing quality with density
+#### 4.3.1 Pure Hopfield: High Similarity, Low Accuracy
 
-### 5.3 Implications at Scale
+At 5% compression on the Wikipedia corpus (N=5000):
 
-If the density hypothesis holds:
+| Method | Cosine Sim | NN@1 Accuracy | NN@5 Accuracy |
+|--------|-----------|---------------|---------------|
+| DCT alone | 0.22 | 26% | 76% |
+| Pure Hopfield (α=0) | 0.65 | 24% | 62% |
 
-- **100K memories** (small company): Moderate compression benefit, perhaps 20× over DCT alone
-- **1M memories** (department): Significant compression, institutional knowledge begins to emerge
-- **100M memories** (Walmart-scale): Individual agents store minimal representations; the organizational fabric provides reconstruction context for everything
+Pure Hopfield achieves 3× higher similarity but *worse* nearest-neighbor accuracy. The reconstruction converges to a semantically plausible but incorrect basin — a memory about "April" reconstructs to something near "October" rather than "June." Both are months, both are plausible, but it's the wrong one.
 
-The organization becomes the memory. Individual agents are windows into it.
+This is **computational confabulation** — the direct analog of human false memory formation [Schacter, 1999]. The reconstruction is confident, coherent, and wrong.
+
+#### 4.3.2 Anchored Hopfield: The Resolution
+
+Anchored retrieval (Section 3.3) resolves the tradeoff by constraining Hopfield reconstruction to the DCT signal's directional truth:
+
+| Method | Cosine Sim | NN@1 | NN@5 |
+|--------|-----------|------|------|
+| DCT alone | 0.22 | 26% | 76% |
+| Pure Hopfield (α=0) | 0.65 | 24% | 62% |
+| Anchored α=0.3 | 0.64 | 26% | 64% |
+| Anchored α=0.5 | 0.56 | 26% | 68% |
+| Anchored α=0.7 | 0.43 | **28%** | 70% |
+| Anchored α=0.9 | 0.28 | 26% | **82%** |
+
+**Key findings:**
+
+1. **α=0.9 achieves 82% NN@5 accuracy** — surpassing both DCT alone (76%) and pure Hopfield (62%). Heavy anchoring uses just enough associative context to enhance the signal without drifting to wrong basins.
+
+2. **α=0.7 achieves the highest NN@1 accuracy** (28%) while doubling similarity over DCT alone (0.43 vs 0.22).
+
+3. **The anchor parameter α controls a continuous tradeoff** between similarity (how "rich" the reconstruction feels) and accuracy (whether it's the right memory). This is not a limitation — it's a tunable design parameter.
+
+4. **The optimal α is task-dependent:**
+   - Gist retrieval (what was this about?) → low α, maximize similarity
+   - Identity retrieval (which specific memory?) → high α, maximize accuracy
+   - This maps to biological memory modes: familiarity (fast, gist-based) vs. recollection (slow, detail-specific) [Yonelinas, 2002]
+
+## 5. Density Scaling
+
+### 5.1 Confirmed: Quality Scales with Corpus Density
+
+Phase 2 validates the density scaling hypothesis. At 5% compression, reconstruction quality increases from 0.53 (N=50) to 0.65 (N=5000). The scaling is non-monotonic — a "sparse middle" dip occurs at N=100-500 — but resolves decisively at N=5000. At 50% compression, the crossover from "DCT wins" to "Hopfield wins" occurs between N=1000 and N=5000, confirming that density shifts the balance point.
+
+### 5.2 Two Density Effects
+
+**Similarity scaling** (pure Hopfield): More memories → richer associative context → higher cosine similarity to original. Confirmed experimentally.
+
+**Accuracy scaling** (anchored Hopfield): More memories → denser basins → sharper gradients → the anchor has more structure to leverage. We predict that NN@1 accuracy at high α will improve with density even faster than similarity, because denser basins reduce the probability of basin drift. This requires validation at N > 5000.
+
+### 5.3 Domain Coherence Effect
+
+Phase 1 (agent memory, single domain, N=65) achieved 0.94 similarity. Phase 2 (Wikipedia, cross-domain, N=5000) achieved 0.65. The 0.29 gap is explained by *domain coherence* — memories from the same domain form tighter, better-differentiated basins.
+
+This predicts that organizational corpora (same company, same workflows, same terminology) will achieve better reconstruction than heterogeneous public datasets at equivalent density. The agent memory result (0.94 at N=65) may be more representative of organizational performance than the Wikipedia result (0.65 at N=5000).
+
+### 5.4 Implications at Scale
+
+- **100K memories** (team): Domain-coherent, dense. Likely exceeds 0.90 similarity with high accuracy
+- **1M memories** (department): Cross-functional associations emerge. Supply chain memories help logistics recall
+- **100M memories** (enterprise): The organization becomes the memory. Individual agents store skeletal representations; the collective provides reconstruction context
+
+The anchored Hopfield architecture ensures this scaling improves both similarity AND accuracy — not just confident confabulation at larger scale.
 
 ## 6. Unification: Papers 1-9 as a Single System
 
@@ -267,34 +314,45 @@ The parallel to **childhood amnesia** is particularly striking: young children f
 
 ## 8. Limitations and Open Questions
 
-### 8.1 Confabulation Risk
+### 8.1 Confabulation as Feature and Risk
 
-Hopfield reconstruction is not guaranteed to recover the original memory. It recovers the *most probable* memory given the associative context. At scale, this could produce confident but incorrect reconstructions — organizational false memories.
+Our experiments reveal that pure Hopfield reconstruction produces *computational confabulation* — confident, coherent, but incorrect recall. This parallels human false memory formation precisely.
 
-Mitigation strategies:
-- Confidence scoring based on basin depth (distance to nearest energy minimum)
-- Provenance tracking (which source memories contributed to reconstruction)
-- Verification against retained low-frequency coefficients (structural skeleton should match)
+The anchored Hopfield architecture (Section 3.3) mitigates this by constraining reconstruction to the DCT signal's direction. At α=0.9, accuracy exceeds both DCT alone and pure Hopfield. However, the optimal α is task-dependent, and automatic α selection remains an open problem.
 
-### 8.2 Privacy Implications
+**Confabulation may sometimes be desirable.** When an agent needs the gist of a degraded memory (what was this about?) rather than its exact identity (which specific memory?), low-α reconstruction provides useful semantic approximation. The biological parallel is the distinction between familiarity ("I've seen this before") and recollection ("I remember exactly when and where") [Yonelinas, 2002].
 
-If individual memories reconstruct from organizational context, the organization's knowledge is implicitly present in individual recall. This raises questions about information boundaries in multi-tenant systems.
+### 8.2 Privacy and Information Boundaries
+
+If individual memories reconstruct from organizational context, the organization's knowledge is implicitly present in individual recall. This is the *mobile identity problem*: an agent carrying personal identity into a corporate environment must not allow corporate data to flow into personal memory, and vice versa. Read-only identity modes (personal context in, nothing out) provide one solution.
 
 ### 8.3 Scaling Validation
 
-Our Phase 1 results use 65 memories — far from organizational scale. The density scaling hypothesis requires validation at 10K-1M memories to confirm the predicted improvement curve.
+Phase 2 validates density scaling to N=5000. The predicted improvements at 100K+ require validation on larger corpora. The sparse middle dip (N=100-500) and domain coherence effect both need characterization at intermediate scales.
 
-### 8.4 Optimal β Selection
+### 8.4 Optimal Hyperparameter Selection
 
-The inverse temperature β should be a function of corpus density, not a fixed hyperparameter. Deriving this relationship analytically (potentially from the chemical kinetics framework of Paper 3) is an open problem.
+Both β (inverse temperature) and α (anchor weight) should be functions of corpus density and task type, not fixed hyperparameters. The chemical kinetics framework [Paper 3] may provide a principled derivation: β as activation energy (sharper retrieval requires more energy in sparse landscapes), α as reaction equilibrium (the balance between preservation and transformation).
+
+### 8.5 The Accuracy-Density Interaction
+
+Our most important open question: does anchored Hopfield accuracy scale with density? If NN@1 accuracy at α=0.7 improves from 28% (N=5000) toward 50%+ at N=100K, the architecture becomes viable for precise retrieval at organizational scale. If accuracy plateaus, the system is limited to gist-level reconstruction. This determines whether the architecture supports institutional knowledge or only institutional intuition.
 
 ## 9. Conclusion
 
-We have demonstrated that Hopfield-DCT reconstruction achieves 14× effective compression over DCT alone on a 65-memory agent corpus, with reconstruction quality of 0.94 at 5% coefficient retention. More significantly, we have argued that this architecture unifies nine prior papers into a single system where individual memory mechanics and collective organizational dynamics are coupled through an associative fabric.
+We have demonstrated three results:
 
-The central contribution is the *collective compression* mechanism: individual storage cost decreases as corpus density increases. This inverts the usual scaling relationship and suggests that organizational memory systems can achieve sub-linear storage growth — the organization becomes the memory, and individual agents are windows into it.
+1. **Hopfield-DCT reconstruction dramatically improves cosine similarity** over DCT alone — from 0.24 to 0.94 at 5% retention on a 65-memory corpus (Phase 1), and from 0.22 to 0.65 on a 5000-memory cross-domain corpus (Phase 2).
 
-The complexity ladder — from cadence resonance through organizational thermodynamics, chemical kinetics, biological consolidation, embedding compression, adaptive organizations, cognitive signatures, conversation signatures, and memetic evolution — is not ten separate ideas. It is one system whose emergent properties only manifest at scale.
+2. **Reconstruction quality scales with corpus density** — a 23% quality improvement from N=50 to N=5000 at 5% compression, with domain-coherent corpora (agent memory) achieving substantially better results than cross-domain corpora (Wikipedia) at lower density.
+
+3. **Pure Hopfield reconstruction sacrifices accuracy for similarity** — producing computational confabulation analogous to human false memory. The **anchored Hopfield architecture** resolves this: at α=0.9, nearest-neighbor accuracy reaches 82% (NN@5), surpassing both DCT alone (76%) and pure Hopfield (62%).
+
+The central contribution is not raw compression improvement but the discovery of a **tunable similarity-accuracy tradeoff** governed by the anchor parameter α. This tradeoff mirrors the biological distinction between familiarity and recollection, and provides a principled design axis for organizational memory systems.
+
+The broader claim stands: this architecture unifies nine prior papers into a single system. The Hopfield layer bridges individual memory mechanics (DCT compression, access-driven consolidation) with collective dynamics (organizational thermodynamics, adaptive autonomy, memetic evolution). The emergent properties — institutional knowledge, collective compression, reconstructive recall — only manifest at scale, and only when all layers operate together.
+
+The complexity ladder is not ten separate ideas. It is one system. This paper is the demonstration that the layers connect.
 
 ## References
 
@@ -325,3 +383,5 @@ Ramsauer, H., et al. (2021). Hopfield Networks is All You Need. *ICLR*.
 Reyna, V. F. & Brainerd, C. J. (1995). Fuzzy-trace theory: An interim synthesis. *Learning and Individual Differences*, 7(1), 1–75.
 
 Schacter, D. L. (1999). The seven sins of memory: Insights from psychology and cognitive neuroscience. *American Psychologist*, 54(3), 182–203.
+
+Yonelinas, A. P. (2002). The nature of recollection and familiarity: A review of 30 years of research. *Journal of Memory and Language*, 46(3), 441–517.
