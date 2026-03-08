@@ -6,7 +6,7 @@
 
 ## Abstract
 
-We introduce *crystallizing attention*, a training mechanism where each attention head's gradient is scaled by its own entropy dynamics. Heads that converge to stable, low-entropy attention patterns—crystallized heads—receive near-zero gradient, while high-entropy fluid heads retain full learning capacity. This produces a natural self-partitioning: attention heads spontaneously separate into crystallized (fixed structure) and fluid (contextual computation) populations, with middle layers crystallizing first and interface layers remaining liquid. Across two datasets—character-level Shakespeare (47% crystallization) and Python source code (42% crystallization)—we find that the crystallization fraction differs between datasets while the spatial ordering (middle-out) remains constant. Contrary to our initial hypothesis, code crystallizes *less* than prose despite having more rigid syntax, because its structural patterns are more contextually derivable. This suggests crystallization measures not structural density but *contextual opacity*: the fraction of patterns the model cannot derive from context and must memorize. Combined with learning velocity (which differs 2× between datasets), crystallization dynamics constitute a two-dimensional *spectroscopy* of dataset structure, measurable in the first few hundred training steps. We additionally show that a phase-shift variant exploiting the crystallization diagnostic achieves the best non-standard validation loss (1.4788 vs standard's 1.4664) with a checkpoint stability window 10× wider than standard training.
+We introduce *crystallizing attention*, a training mechanism where each attention head's gradient is scaled by its own entropy dynamics. Heads that converge to stable, low-entropy attention patterns—crystallized heads—receive near-zero gradient, while high-entropy fluid heads retain full learning capacity. This produces a natural self-partitioning: attention heads spontaneously separate into crystallized (fixed structure) and fluid (contextual computation) populations, with middle layers crystallizing first and interface layers remaining liquid. Across two datasets—character-level Shakespeare (47% crystallization) and Python source code (42% crystallization)—we find that the crystallization fraction differs between datasets while the spatial ordering (middle-out) remains constant. Contrary to our initial hypothesis, code crystallizes *less* than prose despite having more rigid syntax, because its structural patterns are more contextually derivable. This suggests crystallization measures not structural density but *contextual opacity*: the fraction of patterns the model cannot derive from context and must memorize. Combined with learning velocity (which differs 2× between datasets), crystallization dynamics constitute a two-dimensional *spectroscopy* of dataset structure, measurable in the first few hundred training steps. We additionally show that a phase-shift variant exploiting the crystallization diagnostic achieves the best non-standard validation loss (1.4788 vs standard's 1.4664) with improved checkpoint stability relative to standard training.
 
 ## 1. Introduction
 
@@ -135,7 +135,7 @@ We explored six mechanisms for controlling crystallization dynamics:
 
 | Variant | Best Val Loss | Best Step | Crystal % | Key Finding |
 |:---|:---:|:---:|:---:|:---|
-| Standard | **1.4664** | 175 | — | Sharp peak, fast overfit |
+| Standard | **1.4664** | 1750 | — | Best overall val loss |
 | Phase Shift | **1.4788** | 2050 | 45% locked | Best non-standard; wide checkpoint window |
 | Split Brain† | 1.4854 | — | — | Hemisphere separation helps |
 | V1 Natural | 1.5006 | 1650 | 47% | Natural plateau baseline |
@@ -153,10 +153,10 @@ We explored six mechanisms for controlling crystallization dynamics:
 ### 3.6 Checkpoint Stability
 
 The practical advantage of crystallizing attention:
-- **Standard**: Best val loss at step 175. A single-step event; val loss at step 500 is already 1.55+.
-- **Phase Shift**: Best val loss at step 2050. Val loss within 0.01 of best for steps 1600-2200 (600-step window).
+- **Standard**: Best val loss 1.4664 at step 1750. Overfits to ~1.68 by step 5000.
+- **Phase Shift**: Best val loss 1.4788 at step 2050. Val loss within 0.01 of best for steps 1600-2200 (600-step window).
 
-The crystallization plateau serves as a reliable checkpointing signal: when crystal percentage stops growing, begin saving checkpoints. This eliminates the need for exhaustive evaluation or lucky early stopping.
+Both standard and phase-shift training peak in a similar step range (~1750-2050). The crystallization plateau provides an internally-derived checkpointing signal (independent of validation loss) that coincides with the optimal checkpoint region: when crystal percentage stops growing, begin saving checkpoints.
 
 ## 4. Related Work
 
@@ -201,7 +201,7 @@ The most significant finding may not be the training mechanism but its use as a 
 
 Crystallizing attention reveals that transformer attention heads spontaneously self-partition during training into fixed-structure and contextual-computation populations. This partition follows a consistent middle-out spatial ordering across layers but varies in magnitude across datasets—47% on Shakespeare, 42% on Python—measuring not structural density but *contextual opacity*: how much of the data's pattern exceeds the model's ability to derive from context.
 
-The mechanism is simple (entropy-gated gradient scaling), the observation is robust (consistent across six mechanistic variants), and the practical benefit is clear (10× wider checkpoint stability window). But the most promising direction is the use of crystallization dynamics as a spectroscopy—a fast, cheap characterization of dataset structure through the lens of how a neural network interacts with it.
+The mechanism is simple (entropy-gated gradient scaling), the observation is robust (consistent across six mechanistic variants), and the practical benefit is clear (internally-derived checkpointing signal). But the most promising direction is the use of crystallization dynamics as a spectroscopy—a fast, cheap characterization of dataset structure through the lens of how a neural network interacts with it.
 
 The primary contribution is the observation, not the mechanism. V1—the simplest variant—was already close to optimal. The journey through six variants taught us that the crystal fraction is a measurement, not a lever.
 
