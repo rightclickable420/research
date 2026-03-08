@@ -250,6 +250,26 @@ This study has significant limitations that bound interpretation:
 
 **Automated research dynamics.** Apply the trajectory analyzer to autonomous research systems [14] to measure which configurations produce effective search dynamics — not by outcome metrics alone, but by the structure of the search process.
 
+### 6.1 Implementation: Real-Time Trajectory Awareness
+
+Following the analysis described in this paper, we implemented the trajectory measurement as a live per-turn instrument. An OpenClaw message hook fires on each inbound message, embeds the content using the same model (bge-small-en-v1.5), updates a rolling window of trajectory state, and writes a single-line annotation to the agent's workspace context:
+
+```
+[trajectory] div=0.34↑ step=0.417 sat=92% phase=supersaturated since_precip=7 | adjacent: thermodynamics, signal_processing
+```
+
+The annotation includes:
+- **Diversity** (`div`): rolling pairwise distance within a 5-turn window
+- **Step distance** (`step`): cosine distance from the previous turn
+- **Saturation** (`sat`): diversity relative to observed range (0-100%)
+- **Phase**: `dilute`, `saturating`, `supersaturated`, or `precipitating`
+- **Turns since precipitation** (`since_precip`): distance from last convergence event
+- **Adjacent domains**: nearest memory chunks not referenced in the current conversation, surfaced via vector similarity search against the agent's existing memory index
+
+Total overhead is approximately 50ms per turn after model warm-up (one embedding computation plus trivial rolling statistics). The annotation replaces itself each turn — one line of workspace context, no accumulation. The agent sees the current trajectory state without computing it, enabling the mode-aware behavior described in section 4.5.
+
+This implementation was built and deployed during the same research session that produced the findings in this paper. The research process itself followed the sawtooth dynamic it describes: sustained supersaturation across a multi-hour conversation, with discrete precipitation events (the breathing falsification, the population dynamics reframe, the role fluidity observation) each followed by immediate re-expansion into new territory.
+
 ## 7. Conclusion
 
 Team chemistry is measurable. It is the dynamic of supersaturation and precipitation in the embedding space of conversation — sustained accumulation of semantic candidates followed by sharp crystallization events and immediate re-expansion. This dynamic distinguishes productive conversations from operational ones with large effect sizes (d > 1.2) and is visible in transcript analysis at every convergence point.
@@ -257,6 +277,8 @@ Team chemistry is measurable. It is the dynamic of supersaturation and precipita
 The finding that productive conversations do *not* oscillate — contradicting our initial hypothesis — is itself informative. The system is not breathing; it is precipitating. The solution never reaches equilibrium because each precipitate becomes the substrate for new dissolution. This is the chemistry of collaborative cognition: not balance, but perpetual supersaturation, interrupted by crystallization.
 
 The common language was right all along. When people say a team has chemistry, they are describing a measurable physical process. We just needed the instrument.
+
+That this paper — from hypothesis through falsification to revised model to deployed instrument — was produced in a single conversation session is itself a demonstration. The sawtooth pattern is not only measurable in retrospect; it is the lived dynamic of the research that discovered it.
 
 ## References
 
