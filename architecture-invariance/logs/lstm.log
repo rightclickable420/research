@@ -1,0 +1,79 @@
+
+============================================================
+Architecture Invariance Experiment
+Architecture: lstm
+Output: results/lstm
+Device: cpu
+============================================================
+
+Model parameters: 802,688
+step     0 | train 4.1889 | val 4.1930 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 0.00e+00 | 7.5s
+step    50 | train 3.3506 | val 3.3848 | crystal 99.6% | order [1, 2, 3, 4, 5, 0] | lr 5.00e-04 | 48.1s
+step   100 | train 3.3072 | val 3.3481 | crystal 97.7% | order [5, 2, 3, 4, 1, 0] | lr 1.00e-03 | 89.2s
+step   150 | train 3.1784 | val 3.1909 | crystal 98.4% | order [4, 5, 2, 3, 1, 0] | lr 1.00e-03 | 130.7s
+step   200 | train 2.7421 | val 2.7236 | crystal 99.5% | order [2, 3, 4, 5, 1, 0] | lr 9.99e-04 | 170.4s
+step   250 | train 2.4381 | val 2.4310 | crystal 99.6% | order [2, 3, 4, 5, 1, 0] | lr 9.98e-04 | 211.2s
+step   300 | train 2.2592 | val 2.2617 | crystal 99.7% | order [2, 3, 4, 5, 0, 1] | lr 9.96e-04 | 252.6s
+step   350 | train 2.1354 | val 2.1646 | crystal 99.7% | order [2, 3, 4, 5, 0, 1] | lr 9.94e-04 | 293.5s
+step   400 | train 2.0216 | val 2.0623 | crystal 99.7% | order [2, 3, 4, 5, 0, 1] | lr 9.92e-04 | 334.7s
+step   450 | train 1.9298 | val 2.0153 | crystal 99.9% | order [1, 2, 3, 4, 5, 0] | lr 9.89e-04 | 376.1s
+step   500 | train 1.8518 | val 1.9384 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.85e-04 | 416.9s
+step   550 | train 1.8041 | val 1.8878 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.81e-04 | 457.6s
+step   600 | train 1.7151 | val 1.8656 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.77e-04 | 498.6s
+step   650 | train 1.6787 | val 1.8214 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.72e-04 | 540.2s
+step   700 | train 1.6254 | val 1.7859 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.67e-04 | 580.6s
+step   750 | train 1.6108 | val 1.7774 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.61e-04 | 621.7s
+step   800 | train 1.5915 | val 1.7381 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.55e-04 | 662.7s
+step   850 | train 1.5581 | val 1.7334 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.49e-04 | 702.2s
+step   900 | train 1.5477 | val 1.6832 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.42e-04 | 743.1s
+step   950 | train 1.5173 | val 1.6818 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.35e-04 | 783.3s
+step  1000 | train 1.5017 | val 1.6753 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.27e-04 | 823.7s
+step  1050 | train 1.4956 | val 1.6770 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.19e-04 | 864.8s
+step  1100 | train 1.4711 | val 1.6750 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.11e-04 | 904.8s
+step  1150 | train 1.4720 | val 1.6568 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 9.02e-04 | 945.8s
+step  1200 | train 1.4577 | val 1.6410 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.93e-04 | 986.4s
+step  1250 | train 1.4441 | val 1.6211 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.83e-04 | 1027.1s
+step  1300 | train 1.4425 | val 1.6273 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.73e-04 | 1065.9s
+step  1350 | train 1.4335 | val 1.6222 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.63e-04 | 1107.1s
+step  1400 | train 1.4121 | val 1.5894 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.53e-04 | 1148.7s
+step  1450 | train 1.4164 | val 1.5993 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.42e-04 | 1188.4s
+step  1500 | train 1.3969 | val 1.5939 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.31e-04 | 1228.9s
+step  1550 | train 1.4085 | val 1.5896 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.19e-04 | 1269.1s
+step  1600 | train 1.3794 | val 1.5723 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 8.07e-04 | 1309.8s
+step  1650 | train 1.3893 | val 1.5801 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.95e-04 | 1350.3s
+step  1700 | train 1.3811 | val 1.5748 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.83e-04 | 1390.9s
+step  1750 | train 1.3873 | val 1.5628 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.71e-04 | 1432.0s
+step  1800 | train 1.3781 | val 1.5741 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.58e-04 | 1470.7s
+step  1850 | train 1.3733 | val 1.5645 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.45e-04 | 1511.1s
+step  1900 | train 1.3651 | val 1.5500 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.32e-04 | 1551.5s
+step  1950 | train 1.3722 | val 1.5482 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.19e-04 | 1591.2s
+step  2000 | train 1.3613 | val 1.5416 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 7.05e-04 | 1631.7s
+step  2050 | train 1.3412 | val 1.5554 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 6.92e-04 | 1672.2s
+step  2100 | train 1.3472 | val 1.5446 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 6.78e-04 | 1712.6s
+step  2150 | train 1.3451 | val 1.5280 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 6.64e-04 | 1753.6s
+step  2200 | train 1.3310 | val 1.5246 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 6.50e-04 | 1794.7s
+step  2250 | train 1.3433 | val 1.5474 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 6.36e-04 | 1835.7s
+step  2300 | train 1.3284 | val 1.5277 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 6.22e-04 | 1877.0s
+step  2350 | train 1.3305 | val 1.5375 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 6.08e-04 | 1917.8s
+step  2400 | train 1.3204 | val 1.5141 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 5.93e-04 | 1958.9s
+step  2450 | train 1.3174 | val 1.5304 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 5.79e-04 | 1999.3s
+step  2500 | train 1.3209 | val 1.5006 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 5.64e-04 | 2040.9s
+step  2550 | train 1.3056 | val 1.5184 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 5.50e-04 | 2081.8s
+step  2600 | train 1.3140 | val 1.5139 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 5.36e-04 | 2122.5s
+step  2650 | train 1.3149 | val 1.5224 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 5.21e-04 | 2163.2s
+step  2700 | train 1.3094 | val 1.5207 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 5.07e-04 | 2204.5s
+step  2750 | train 1.3085 | val 1.5163 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 4.92e-04 | 2246.1s
+step  2800 | train 1.3125 | val 1.5245 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 4.78e-04 | 2293.0s
+step  2850 | train 1.3044 | val 1.5148 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 4.64e-04 | 2332.1s
+step  2900 | train 1.2984 | val 1.5068 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 4.50e-04 | 2372.3s
+step  2950 | train 1.2985 | val 1.5039 | crystal 100.0% | order [0, 1, 2, 3, 4, 5] | lr 4.36e-04 | 2412.2s
+
+============================================================
+Training complete in 2452.2s (40.9m)
+Best val loss: 1.5006
+Final crystal fraction: 100.0%
+Per-layer: ['100.0%', '100.0%', '100.0%', '100.0%', '100.0%', '100.0%']
+Layer ordering (most→least crystallized): [0, 1, 2, 3, 4, 5]
+============================================================
+
+Results saved to results/lstm/
