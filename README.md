@@ -39,6 +39,15 @@ Conversations have cognitive modes (infrastructure, research, creation, ideation
 ### 8. [Cognitive Signatures](./cognitive-signatures.md)
 Framework for measuring HOW people think (not what they know) to predict human-AI collaboration potential. Five continuous dimensions: Connection Pattern, Frame Dependence, Scope Instinct, Ambiguity Response, Integration Speed. Agent-administered via conversation. Three tools in one: self-understanding, human-human matching, and bilateral human-AI calibration.
 
+### 10. [Associative Organizational Memory](./associative-organizational-memory.md)
+Hopfield networks + DCT for organizational memory retrieval. Anchored attention (`AnchoredAttention = α·Q + (1-α)·softmax(QK^T/√d)·V`) beats both pure Hopfield (confabulates) and pure DCT. Dynamic anchor from attention entropy unifies papers 1, 2, 4, 10.
+
+### 11. [Conversational Chemistry](./conversational-chemistry.md)
+Embedding trajectory analysis of 39 agent sessions. Sawtooth precipitation pattern (not oscillation): supersaturate→precipitate→dissolve new material. Kevin's first lead-author paper.
+
+### 12. [Geometric Pre-computation in Sequential Prediction](./geometric-precomputation.md)
+Decomposes transformer performance into pre-computable geometry (~90%) and a learned coordinate rotation (~10%). Kinematic trajectory extrapolation on SVD embeddings matches transformer top-5/top-10 with zero training. The remaining top-1 gap (1.55×) resists four analytical approximations, revealing that attention performs *geometric selection* — a rotation that unifies sharpness and breadth simultaneously.
+
 ### 9. [Memetic Evolution](./memetic-evolution.md)
 Heredity and evolution in persistent agent systems. Biological evolution is blind and inter-generational; memetic evolution is directed but lossy; agent evolution is directed, versioned, and self-aware. Formalizes "agent DNA" (transferable operational principles) vs "agent memory" (non-transferable episodic context). Introduces genotype/phenotype classification for cross-boundary knowledge transfer using dpth entity resolution as the synchronization mechanism.
 
@@ -58,6 +67,7 @@ Each paper climbs one rung:
 | Coordination | Sociology | Adaptive Organizations | Execution loops, autonomy levels, self-improvement |
 | Cognition | Psychology | Conversation Signatures | Mode detection, attention, context-aware compression |
 | Evolution | Biology | Memetic Evolution | Heredity, genotype/phenotype, Lamarckian inheritance |
+| Attention | Mathematics | Geometric Pre-computation | SVD geometry, kinematic extrapolation, geometric selection |
 
 Common language encodes these relationships literally: *resonate* = frequency coupling, *swamped* = low flow + high entropy, *saturated* = solubility limit reached, *crystallized* = phase transition from liquid to solid, *DNA* = transferable operational structure, *phenotype* = environment-specific adaptation.
 
